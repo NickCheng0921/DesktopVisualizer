@@ -2,11 +2,11 @@
 
 Desktop Audio Visualizer App written w/ Tkinter + Pyaudio
 
-![Demo Gif](demo.gif)
+![Demo Gif](demos/demo1.1.gif)
 
 ## How to use
 
-Run visualizer.py directly, or look in build folder for a windows executable
+Run visualizer.py directly, or look in dist folder for a windows executable
 
 ### Notable features
 

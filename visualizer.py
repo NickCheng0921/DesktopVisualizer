@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import threading
+import os
 
 # Constants
 FORMAT = pyaudio.paInt16
@@ -45,27 +46,42 @@ class LiveLogScaleBarChartApp:
             input_device_index=default_speakers["index"]
         )
 
-        # Matplotlib setup
+        # Modify plot look
         self.fig, self.ax = plt.subplots()
         self.fig.set_facecolor('#2E3440')
+        self.ax.set_facecolor('#2E3440')
+        self.ax.spines['left'].set_visible(False)
+        self.ax.spines['right'].set_visible(False)
+        self.ax.spines['top'].set_visible(False)
+        self.ax.spines['bottom'].set_visible(False)
+        self.ax.xaxis.set_ticks_position('none')
+        self.ax.tick_params(axis='x', rotation=45)
+        self.fig.subplots_adjust(left=0, right=1, top=1)
+
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas_widget = self.canvas.get_tk_widget()
         self.canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         # Initialize data buffer
         self.frequency_bins = [32, 64, 128, 256, 512, 1000, 2000, 4000, 8000, 16000]
+        self.ax_ticks = ['32', '64', '128', '256', '512', '1K', '2K', '4K', '8K', '16K']
         self.bar_positions = np.arange(len(self.frequency_bins))
+
+        self.ax.set_xticks(list(range(len(self.frequency_bins))))
+        self.ax.set_xticklabels(self.ax_ticks, color='#A3BE8C')
 
         # Create an initial empty bar chart
         self.bars = self.ax.bar(
             self.bar_positions,
             np.zeros_like(self.frequency_bins),
             color='#A3BE8C',  # Nord Green color
+
         )
-        self.ax.set_ylim(1, 1e7)  # Adjust the y-axis limits based on your data
-        plt.axis('off')
-        plt.tick_params(axis='both', left=False, top=False, right=False, bottom=False, labelleft=False,
-                        labeltop=False, labelright=False, labelbottom=False)
+        self.ax.set_ylim(1, 8*1e6)  # Adjust the y-axis limits based on your data
+        #plt.axis('off')
+        plt.gca().get_yaxis().set_visible(False)
+        #plt.tick_params(axis='both', left=False, top=False, right=False, bottom=False, labelleft=False,
+        #                labeltop=False, labelright=False, labelbottom=False)
 
         # Tkinter setup
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -117,4 +133,6 @@ class LiveLogScaleBarChartApp:
 
 if __name__ == "__main__":
     root = tk.Tk()
+    icon_path = os.path.abspath('./static/favicon.ico')
+    root.iconbitmap(icon_path)
     app = LiveLogScaleBarChartApp(root)
