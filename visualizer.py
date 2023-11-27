@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import scrolledtext
-from tkinter import ttk
 import pyaudiowpatch as pyaudio
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,6 +7,15 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import threading
 import os
 import ctypes
+import time
+
+# transcriber libraries
+import queue
+from AudioTranscriber import AudioTranscriber
+import AudioRecorder
+import sys
+import TranscriberModels
+import subprocess
 
 # Constants
 FORMAT = pyaudio.paInt16
@@ -138,34 +146,49 @@ class LiveLogScaleBarChartApp:
         self.root.destroy()
         exit()
 
+def update_transcript_UI(transcriber, scrolled_text):
+    transcript_string = transcriber.get_transcript()
+    scrolled_text.delete(1.0, tk.END)
+    scrolled_text.insert(tk.END, transcript_string)
+    scrolled_text.see(tk.END)
+    time.sleep(300/1000)
+
+    update_transcript_UI(transcriber, scrolled_text)
+
+
 def transcriberWindow(parent):
+    try:
+        subprocess.run(["ffmpeg", "-version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except FileNotFoundError:
+        print("ERROR: The ffmpeg library is not installed. Please install ffmpeg and try again.")
+        return
+    
     transcribeBox = tk.Frame(parent, bg=COLOR_MAIN, highlightthickness=0, relief='flat')
     transcribeBox.pack(side='bottom', fill='both', expand=True)
 
     separator = tk.Frame(transcribeBox, bg=COLOR_SEP, height=2, bd=0)
     separator.pack(fill="x", pady=(10, 0))
 
-    # Add a Label to display multiline text
-    text = """Contrary to popular belief, Lorem Ipsum is not simply random text. 
-    It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. 
-    Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, 
-    looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, 
-    and going through the cites of the word in classical literature, discovered the undoubtable source. 
-    Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" 
-    (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, 
-    very popular during the Renaissance. 
-    The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32."""
-
     scrolled_text = scrolledtext.ScrolledText(transcribeBox, wrap=tk.WORD,
                                             font=("Helvetica", 14),
                                             bg=COLOR_MAIN, fg=COLOR_SIDE,
-                                            height=7, relief='flat')
+                                            height=10, relief='flat')
 
-    scrolled_text.insert(tk.END, text)
-    scrolled_text.see(tk.END)
     scrolled_text.pack(padx=(10, 0), pady=(7, 7), expand=True, fill=tk.BOTH)
     scrolled_text.vbar.pack_forget() #default windows scrollbar ugly af
 
+    audio_queue = queue.Queue()
+    speaker_audio_recorder = AudioRecorder.DefaultSpeakerRecorder()
+    speaker_audio_recorder.record_into_queue(audio_queue)
+    model = TranscriberModels.get_model('--api' in sys.argv)
+    transcriber = AudioTranscriber(speaker_audio_recorder.source, model)
+    transcribe = threading.Thread(target=transcriber.transcribe_audio_queue, args=(audio_queue,))
+    transcribe.daemon = True
+    transcribe.start()
+
+    text_thread = threading.Thread(target=update_transcript_UI, args=(transcriber, scrolled_text))
+    text_thread.daemon = True  # The thread will exit when the main program exits
+    text_thread.start()
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -174,7 +197,7 @@ if __name__ == "__main__":
     transcriberWindow(root)
 
     # shrink width a bit from default, makes eq look nicer
-    root.geometry(f"{int(root.winfo_screenwidth() * 0.3)}x{int(root.winfo_screenheight() * 0.6)}")
+    root.geometry(f"{int(root.winfo_screenwidth() * 0.3)}x{int(root.winfo_screenheight() * 0.7)}")
 
     # windows won't display icon on taskbar w/o AppModelId
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('DesktopVisualizer2.1')
