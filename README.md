@@ -3,6 +3,7 @@
 Desktop Audio Visualizer + Transcriber written w/ Tkinter + Pyaudio
 
 ![Demo Gif](demos/demo2.1.gif)
+
 Audio is from https://www.youtube.com/watch?v=laXcJyx9xCc
 
 ## How to use
