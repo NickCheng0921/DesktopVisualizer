@@ -165,15 +165,12 @@ def transcriberWindow(parent):
     
     transcribeBox = tk.Frame(parent, bg=COLOR_MAIN, highlightthickness=0, relief='flat')
     transcribeBox.pack(side='bottom', fill='both', expand=True)
-
     separator = tk.Frame(transcribeBox, bg=COLOR_SEP, height=2, bd=0)
     separator.pack(fill="x", pady=(10, 0))
-
     scrolled_text = scrolledtext.ScrolledText(transcribeBox, wrap=tk.WORD,
                                             font=("Helvetica", 14),
                                             bg=COLOR_MAIN, fg=COLOR_SIDE,
                                             height=10, relief='flat')
-
     scrolled_text.pack(padx=(10, 0), pady=(7, 7), expand=True, fill=tk.BOTH)
     scrolled_text.vbar.pack_forget() #default windows scrollbar ugly af
 
