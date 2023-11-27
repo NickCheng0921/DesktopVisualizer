@@ -22,6 +22,7 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 CHUNK = 1024
 UPDATE_INTERVAL = 75  # milliseconds
+TEXT_LINES = 10
 COLOR_MAIN = '#2E3440'
 COLOR_SIDE = '#A3BE8C'
 COLOR_SEP = '#4C566A'
@@ -74,7 +75,8 @@ class LiveLogScaleBarChartApp:
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas_widget = self.canvas.get_tk_widget()
-        self.canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.canvas_widget.grid(row=0, column=0, sticky="nsew", pady=(0, 10))
+        self.root.geometry(f"{int(self.root.winfo_screenwidth() * 0.3)}x{int(self.root.winfo_screenheight() * 0.7)}")
         self.canvas.draw() # resolve rendering issues w 1 px white line on right
 
         # Initialize data buffer
@@ -155,24 +157,44 @@ def update_transcript_UI(transcriber, scrolled_text):
 
     update_transcript_UI(transcriber, scrolled_text)
 
-
-def transcriberWindow(parent):
+def transcriberWindow(root, initial_width, initial_height):
     try:
         subprocess.run(["ffmpeg", "-version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except FileNotFoundError:
         print("ERROR: The ffmpeg library is not installed. Please install ffmpeg and try again.")
         return
     
-    transcribeBox = tk.Frame(parent, bg=COLOR_MAIN, highlightthickness=0, relief='flat')
-    transcribeBox.pack(side='bottom', fill='both', expand=True)
-    separator = tk.Frame(transcribeBox, bg=COLOR_SEP, height=2, bd=0)
-    separator.pack(fill="x", pady=(10, 0))
-    scrolled_text = scrolledtext.ScrolledText(transcribeBox, wrap=tk.WORD,
-                                            font=("Helvetica", 14),
-                                            bg=COLOR_MAIN, fg=COLOR_SIDE,
-                                            height=10, relief='flat')
-    scrolled_text.pack(padx=(10, 0), pady=(7, 7), expand=True, fill=tk.BOTH)
-    scrolled_text.vbar.pack_forget() #default windows scrollbar ugly af
+    uparrow = tk.StringVar()
+    uparrow.set('\u25B2')
+    downarrow = tk.StringVar()
+    downarrow.set('\u25BC')
+
+    def hide_transcribe():
+        if transcribe_box.winfo_viewable():
+            transcribe_box.grid_forget()
+            root.geometry(f"{initial_width}x{int(initial_height*.6)}")
+            button.config(textvariable=downarrow)
+        else:
+            root.geometry(f"{initial_width}x{initial_height}")
+            transcribe_box.grid(row=1, column=0, sticky="nsew")
+            scrolled_text.config(height=TEXT_LINES)
+            button.config(textvariable=uparrow)
+
+    button = tk.Button(root, command=hide_transcribe, textvariable=uparrow, relief='flat', font=("Helvetica", 8), bg=COLOR_SEP, fg=COLOR_SIDE)
+    button.grid(row=2, column=0, sticky="ew")
+
+    transcribe_box = tk.Frame(root, bg=COLOR_MAIN, highlightthickness=0, relief='flat')
+    transcribe_box.grid(row=1, column=0, sticky="nsew")
+    transcribe_box.columnconfigure(0, weight=1)
+    separator = tk.Frame(transcribe_box, bg=COLOR_SEP, height=2, bd=0)
+    separator.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 0))
+
+    scrolled_text = scrolledtext.ScrolledText(transcribe_box, wrap=tk.WORD,
+                                                    font=("Helvetica", 14),
+                                                    bg=COLOR_MAIN, fg=COLOR_SIDE,
+                                                    height=TEXT_LINES, relief='flat',)
+    scrolled_text.grid(row=1, column=0, padx=(10, 0), pady=(7, 7), sticky="nsew")
+    scrolled_text.vbar.pack_forget()  # default windows scrollbar ugly af
 
     audio_queue = queue.Queue()
     speaker_audio_recorder = AudioRecorder.DefaultSpeakerRecorder()
@@ -189,12 +211,15 @@ def transcriberWindow(parent):
 
 if __name__ == "__main__":
     root = tk.Tk()
+    root.configure(background=COLOR_MAIN)
+    initial_width = int(root.winfo_screenwidth() * 0.3)
+    initial_height = int(root.winfo_screenheight() * 0.7)
+    root.grid_rowconfigure(0, weight=1)
+    root.grid_columnconfigure(0, weight=1)
+    
     icon_path = os.path.abspath('./static/favicon.ico')
     root.iconbitmap(icon_path)
-    transcriberWindow(root)
-
-    # shrink width a bit from default, makes eq look nicer
-    root.geometry(f"{int(root.winfo_screenwidth() * 0.3)}x{int(root.winfo_screenheight() * 0.7)}")
+    transcriberWindow(root, initial_width, initial_height)
 
     # windows won't display icon on taskbar w/o AppModelId
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('DesktopVisualizer2.1')
