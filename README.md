@@ -21,15 +21,13 @@ Relatively lightweight, can run as a background process without overloading syst
 
 **EQ**
 
-Balance frequency bin overflow (current frequency display is inaccurate)
+A-weight or ITU-R 468 reweight audio
 
-A-weight and scale audio for more aesthetic look
+Add saturation effect (minor screen flash)
 
 **Transcription**
 
 Fast Diarization + More accurate Transcription
-
-Freeze Transcription Button
 
 Quantize a larger Whisper model
 

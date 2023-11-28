@@ -52,6 +52,8 @@ class LiveLogScaleBarChartApp:
             else:
                 exit()
 
+        print("Default SR", int(default_speakers["defaultSampleRate"]))
+
         self.stream = self.p.open(
             format=pyaudio.paInt16,
             channels=default_speakers["maxInputChannels"],
@@ -79,9 +81,9 @@ class LiveLogScaleBarChartApp:
         self.root.geometry(f"{int(self.root.winfo_screenwidth() * 0.3)}x{int(self.root.winfo_screenheight() * 0.7)}")
         self.canvas.draw() # resolve rendering issues w 1 px white line on right
 
-        # Initialize data buffer
-        self.frequency_bins = [32, 64, 128, 256, 512, 1000, 2000, 4000, 8000, 16000]
-        self.ax_ticks = ['32', '64', '128', '256', '512', '1K', '2K', '4K', '8K', '16K']
+        # Bass 0 - 250, Mids 250 - 4K, highs (presence and brilliance) -> 22K
+        self.frequency_bins = [64, 128, 256, 512, 1000, 2000, 4000, 8000, 16000, 22000]
+        self.ax_ticks = ['64', '128', '256', '512', '1K', '2K', '4K', '8K', '16K', '22K']
         self.bar_positions = np.arange(len(self.frequency_bins))
 
         self.ax.set_xticks(list(range(len(self.frequency_bins))))
@@ -92,9 +94,8 @@ class LiveLogScaleBarChartApp:
             self.bar_positions,
             np.zeros_like(self.frequency_bins),
             color=COLOR_SIDE,  # Nord Green color
-
         )
-        self.ax.set_ylim(1, 8*1e6)  # Adjust the y-axis limits based on your data
+        self.ax.set_ylim(1, 1e7)  # Adjust the y-axis limits based on your data
         #plt.axis('off')
         plt.gca().get_yaxis().set_visible(False)
         #plt.tick_params(axis='both', left=False, top=False, right=False, bottom=False, labelleft=False,
@@ -121,9 +122,11 @@ class LiveLogScaleBarChartApp:
             data = data * window
             spectrum = np.fft.fft(data)[:CHUNK // 2]
             amplitude = np.abs(spectrum)
-
-            # Update the shared variable for the main thread to access
-            self.amplitude_data = amplitude
+            #magic number conversion based on system sound sample rate of 48KHz
+            splits = [1, 3, 5, 10, 18, 37, 73, 146, 293]
+            inter_amplitude = np.split(amplitude, splits)
+            amplitude = np.array([part.sum()/(len(part)**(1/5)) for part in inter_amplitude])
+            self.amplitude_data = np.clip(amplitude, a_min=None, a_max=9.5*1e6)
 
     def update(self):
         # Access the shared variable for amplitude data
