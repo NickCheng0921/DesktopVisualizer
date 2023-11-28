@@ -9,6 +9,7 @@ import io
 from datetime import timedelta
 import pyaudiowpatch as pyaudio
 from heapq import merge
+import time
 
 PHRASE_TIMEOUT = 3.05
 
@@ -31,8 +32,11 @@ class AudioTranscriber:
             }
         }
 
-    def transcribe_audio_queue(self, audio_queue):
+    def transcribe_audio_queue(self, audio_queue, pause_transcribe):
         while True:
+            while pause_transcribe.is_set():
+                time.sleep(2)
+
             who_spoke, data, time_spoken = audio_queue.get()
             self.update_last_sample_and_phrase_status(who_spoke, data, time_spoken)
             source_info = self.audio_sources[who_spoke]

@@ -169,12 +169,17 @@ def transcriberWindow(root, initial_width, initial_height):
     downarrow = tk.StringVar()
     downarrow.set('\u25BC')
 
+    pause_transcribe = threading.Event()
     def hide_transcribe():
         if transcribe_box.winfo_viewable():
+            pause_transcribe.set()
             transcribe_box.grid_forget()
             root.geometry(f"{initial_width}x{int(initial_height*.6)}")
             button.config(textvariable=downarrow)
         else:
+            with audio_queue.mutex:
+                audio_queue.queue.clear()
+            pause_transcribe.clear()
             root.geometry(f"{initial_width}x{initial_height}")
             transcribe_box.grid(row=1, column=0, sticky="nsew")
             scrolled_text.config(height=TEXT_LINES)
@@ -201,7 +206,7 @@ def transcriberWindow(root, initial_width, initial_height):
     speaker_audio_recorder.record_into_queue(audio_queue)
     model = TranscriberModels.get_model('--api' in sys.argv)
     transcriber = AudioTranscriber(speaker_audio_recorder.source, model)
-    transcribe = threading.Thread(target=transcriber.transcribe_audio_queue, args=(audio_queue,))
+    transcribe = threading.Thread(target=transcriber.transcribe_audio_queue, args=(audio_queue, pause_transcribe,))
     transcribe.daemon = True
     transcribe.start()
 
