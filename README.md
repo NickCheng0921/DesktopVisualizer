@@ -8,7 +8,7 @@ Audio is from https://www.youtube.com/watch?v=laXcJyx9xCc
 
 ## How to use
 
-Run visualizer.py directly for eq + transcription, or look in dist folder for a eq only windows executable (no current transcription app *.exe build as this would require a copy of ffmpeg and whisper model in build directory)
+Run visualizer.py directly for eq + transcription (requires ffmpeg to be installed on system and in ENV path)
 
 ### Notable features
 

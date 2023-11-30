@@ -230,6 +230,6 @@ if __name__ == "__main__":
     transcriberWindow(root, initial_width, initial_height)
 
     # windows won't display icon on taskbar w/o AppModelId
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('DesktopVisualizer2.1')
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('DesktopVisualizer2.2')
 
     app = LiveLogScaleBarChartApp(root)
