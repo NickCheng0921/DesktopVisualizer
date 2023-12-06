@@ -206,7 +206,7 @@ def transcriberWindow(root, initial_width, initial_height):
 
     audio_queue = queue.Queue()
     speaker_audio_recorder = AudioRecorder.DefaultSpeakerRecorder()
-    speaker_audio_recorder.record_into_queue(audio_queue)
+    speaker_audio_recorder.record_into_queue(audio_queue, pause_transcribe,)
     model = TranscriberModels.get_model('--api' in sys.argv)
     transcriber = AudioTranscriber(speaker_audio_recorder.source, model)
     transcribe = threading.Thread(target=transcriber.transcribe_audio_queue, args=(audio_queue, pause_transcribe,))

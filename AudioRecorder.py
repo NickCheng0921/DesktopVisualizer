@@ -24,12 +24,12 @@ class BaseRecorder:
             self.recorder.adjust_for_ambient_noise(self.source)
         print(f"[INFO] Completed ambient noise adjustment for {device_name}.")
 
-    def record_into_queue(self, audio_queue):
+    def record_into_queue(self, audio_queue, pause_transcribe):
         def record_callback(_, audio:sr.AudioData) -> None:
             data = audio.get_raw_data()
             audio_queue.put((self.source_name, data, datetime.utcnow()))
 
-        self.recorder.listen_in_background(self.source, record_callback, phrase_time_limit=RECORD_TIMEOUT)
+        self.recorder.listen_in_background(self.source, record_callback, pause_transcribe, phrase_time_limit=RECORD_TIMEOUT)
 
 class DefaultMicRecorder(BaseRecorder):
     def __init__(self):
